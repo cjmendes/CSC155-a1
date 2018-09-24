@@ -28,6 +28,7 @@ import javax.swing.JComponent;
 @SuppressWarnings("serial")
 public class Starter extends JFrame implements GLEventListener, MouseWheelListener{
 
+	// Initial Variables
 	private GLCanvas canvas;
 	private GL4 gl;
 	private int rendering_program;
@@ -36,6 +37,8 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	
 	private float x = 0.0f;
 	private float inc = 0.01f;
+	
+	private VertexReading vRead = new VertexReading(gl);
 	
 	public Starter() {
 		commands.CircleCommand circCommand = new commands.CircleCommand();
@@ -48,14 +51,14 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		topPanel.add(circButton);
 		
 		JButton vertButton = new JButton ("Verticle");
-		vertButton.setAction(vertMoveCommand);
+		//vertButton.setAction(vertMoveCommand);
 		topPanel.add(vertButton);
 		
 		
 		this.addMouseWheelListener(this);
 		
 		
-		// get the content pane of the JFrame (this)
+		/*// get the content pane of the JFrame (this)
 		JComponent contentPane = (JComponent) this.getContentPane();
 		// get the "focus is in the window" input map for the content pane
 		int mapName = JComponent.WHEN_IN_FOCUSED_WINDOW;
@@ -70,7 +73,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		// put the "myCommand" command object into the content pane's action map
 		amap.put("color", vertMoveCommand);
 		//have the JFrame request keyboard focus
-		this.requestFocus();
+		this.requestFocus();*/
 		
 		
 		setTitle("Assignment #1");
@@ -84,6 +87,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		animator.start();
 	}
 	
+	// Paints the object and the background 
 	@SuppressWarnings("static-access")
 	@Override
 	public void display(GLAutoDrawable arg0) {
@@ -94,53 +98,13 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		FloatBuffer bkgBuffer = Buffers.newDirectFloatBuffer(bkg);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, bkgBuffer);
 		
-		
-		vertMove();
-		//resize();
-		//******** Resize Function *********
-		/*int offset_loc = gl.glGetUniformLocation(rendering_program, "xbr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xbl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "yt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);*/
-		
-		
+		//vertMove();
+		resize();
+
 		gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3);
 	}
-
-	private void circleMove() {
-		System.out.println(x);
-		int offset_loc = gl.glGetUniformLocation(rendering_program, "xbr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xbl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "yt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-	}
 	
+	// Function for the vertical movement of the object
 	private void vertMove() {
 		x += inc;
 		if(x > 0.5f)
@@ -158,6 +122,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		gl.glProgramUniform1f(rendering_program, offset_loc, x);
 	}
 	
+	// Function for the resizing of the object
 	private void resize() {
 		int offset_loc = gl.glGetUniformLocation(rendering_program, "xbr");
 		gl.glProgramUniform1f(rendering_program, offset_loc, x);
@@ -177,6 +142,8 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		offset_loc = gl.glGetUniformLocation(rendering_program, "yt");
 		gl.glProgramUniform1f(rendering_program, offset_loc, x);
 	}
+	
+	// Prints information about the machine, and then reads in the shader program
 	@SuppressWarnings({ "deprecation", "static-access" })
 	@Override
 	public void init(GLAutoDrawable arg0) {
@@ -186,126 +153,12 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		System.out.println("JOGL Version: " + Package.getPackage("com.jogamp.opengl").getImplementationVersion());
 		System.out.println("Java Version: " + System.getProperty("java.version"));
 		
-		rendering_program = createShaderProgram();
+		rendering_program = vRead.createShaderProgram();
 		gl.glGenVertexArrays(vao.length, vao, 0);
 		gl.glBindVertexArray(vao[0]);
 	}
 	
-	public static void main(String[] args) {
-		new Starter();
-	}
-
-	@SuppressWarnings("static-access")
-	private int createShaderProgram() {
-		gl = (GL4) GLContext.getCurrentGL();
-		int[] vertCompiled = new int[1];
-		int[] fragCompiled = new int[1];
-		int[] linked = new int[1];
-		
-		String vShaderSource[] = util.readShaderSource("src/assets/vert.shader");
-		String fShaderSource[] = util.readShaderSource("src/assets/frag.shader");
-		
-		int vShader = gl.glCreateShader(gl.GL_VERTEX_SHADER);
-		int fShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER);
-		
-		gl.glShaderSource(vShader, vShaderSource.length, vShaderSource, null, 0);
-		gl.glCompileShader(vShader);
-		
-		checkOpenGLError();
-		gl.glGetShaderiv(vShader, gl.GL_COMPILE_STATUS, vertCompiled, 0);
-		if(vertCompiled[0] == 1)
-			System.out.println("Vertex Compilation Succeeded");
-		else {
-			System.out.println("Vertex Compilation Failed");
-			printShaderLog(vShader);
-		}
-		
-		gl.glShaderSource(fShader, fShaderSource.length, fShaderSource, null, 0);
-		gl.glCompileShader(fShader);
-		
-		checkOpenGLError();
-		gl.glGetShaderiv(fShader, gl.GL_COMPILE_STATUS, fragCompiled, 0);
-		if(fragCompiled[0] == 1)
-			System.out.println("Fragment Compilation Succeeded");
-		else {
-			System.out.println("Fragment Compilation Failed");
-			printShaderLog(fShader);
-		}
-		
-		int vfprogram = gl.glCreateProgram();
-		gl.glAttachShader(vfprogram, vShader);
-		gl.glAttachShader(vfprogram, fShader);
-		gl.glLinkProgram(vfprogram);
-		
-		checkOpenGLError();
-		gl.glGetProgramiv(vfprogram, gl.GL_LINK_STATUS, linked, 0);
-		if(linked[0] == 1)
-			System.out.println("Linking Succeeded");
-		else {
-			System.out.println("Linking Failed");
-			printProgramLog(vfprogram);
-		}
-		
-		gl.glDeleteShader(vShader);
-		gl.glDeleteShader(fShader);
-		return vfprogram;
-	}
-	
-	@Override
-	public void dispose(GLAutoDrawable arg0) {}
-	
-	@Override
-	public void reshape(GLAutoDrawable arg0, int arg1, int arg2, int arg3, int arg4) {}
-	
-	private void printShaderLog(int shader) {
-		gl = (GL4) GLContext.getCurrentGL();
-		int[] len = new int[1];
-		int[] chWritten = new int[1];
-		byte[] log = null;
-		
-		//Determine the length of the shader compilation log
-		gl.glGetShaderiv(shader, gl.GL_INFO_LOG_LENGTH, len, 0);
-		if(len[0] > 0) {
-			log = new byte[len[0]];
-			gl.glGetShaderInfoLog(shader, len[0], chWritten, 0, log, 0);
-			System.out.println("Shader Info Log: ");
-			for(int i = 0; i < log.length; i++)
-				System.out.print((char) log[i]);
-		}
-	}
-	
-	private void printProgramLog(int prog) {
-		gl = (GL4) GLContext.getCurrentGL();
-		int[] len = new int[1];
-		int[] chWritten = new int[1];
-		byte[] log = null;
-		
-		//Determine the length of the program compilation log
-		gl.glGetProgramiv(prog, gl.GL_INFO_LOG_LENGTH, len, 0);
-		if(len[0] > 0) {
-			log = new byte[len[0]];
-			gl.glGetProgramInfoLog(prog, len[0], chWritten, 0, log, 0);
-			System.out.println("Program Info Log: ");
-			for(int i = 0; i < log.length; i++)
-				System.out.print((char) log[i]);
-		}
-	}
-	
-	private boolean checkOpenGLError() {
-		gl = (GL4) GLContext.getCurrentGL();
-		boolean foundError = false;
-		GLU glu = new GLU();
-		int glErr = gl.glGetError();
-		
-		while(glErr != gl.GL_NO_ERROR) {
-			System.err.println("glError: " + glu.gluErrorString(glErr));
-			foundError = true;
-			glErr = gl.glGetError();
-		}
-		
-		return foundError;
-	}
-
+	// Mouse Wheel Event Function. Increases and decreases the size of the rendered object
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		
@@ -313,6 +166,19 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 			x += inc;
 		else if (e.getWheelRotation() < 0 && x > -0.4999998f)
 			x -= inc;
+		
+		resize();
 	}
 	
+	// Main function that starts the program
+	public static void main(String[] args) {
+		new Starter();
+	}
+	
+	@Override
+	public void dispose(GLAutoDrawable arg0) {}
+	
+	@Override
+	public void reshape(GLAutoDrawable arg0, int arg1, int arg2, int arg3, int arg4) {}
+
 }
