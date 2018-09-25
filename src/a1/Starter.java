@@ -42,10 +42,12 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	
 	private VertexReading vRead = new VertexReading(gl);
 	private boolean verticalCheck = false;
+	private int changeColor = 0;
 	
 	public Starter() {
 		commands.CircleCommand circCommand = new commands.CircleCommand(this);
 		commands.VertMoveCommand vertMoveCommand = new commands.VertMoveCommand(this);
+		commands.ColorCommand colorCommand = new commands.ColorCommand(this);
 		
 		JButton vertButton = new JButton ("Vertical");
 		vertButton.addActionListener(vertMoveCommand);
@@ -76,7 +78,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		// get the action map for the content pane
 		ActionMap amap = contentPane.getActionMap();
 		// put the "myCommand" command object into the content pane's action map
-		amap.put("color", vertMoveCommand);
+		amap.put("color", colorCommand);
 		//have the JFrame request keyboard focus
 		this.requestFocus();
 		
@@ -96,16 +98,8 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		verticalCheck = !verticalCheck;
 	}
 	
-	public void vertical() {
-		
-		
-		//JButton circButton = new JButton ("Circle");
-		//circButton.setAction(circCommand);
-		//topPanel.add(circButton);
-		
-		
-		//vertButton.setAction(vertMoveCommand);
-		
+	public void switchColorPub() {
+		changeColor = (changeColor == 0) ? 1 : 0;
 	}
 	
 	// Paints the object and the background 
@@ -122,18 +116,16 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		if(verticalCheck)
 			vertMove();
 		//resize();
+		switchColor();
 
 		gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3);
 	}
 	
 	// Function for the vertical movement of the object
 	private void vertMove() {
-		
-		
 		int offset_loc_ybr = gl.glGetUniformLocation(rendering_program, "ybr");
 		int offset_loc_ybl = gl.glGetUniformLocation(rendering_program, "ybl");
 		int offset_loc_yt = gl.glGetUniformLocation(rendering_program, "yt");
-		
 		
 		x += inc;
 		if(x > 0.5f)
@@ -144,6 +136,11 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		gl.glProgramUniform1f(rendering_program, offset_loc_ybr, x);	
 		gl.glProgramUniform1f(rendering_program, offset_loc_ybl, x);
 		gl.glProgramUniform1f(rendering_program, offset_loc_yt, x);
+	}
+	
+	public void switchColor() {
+		int offset_loc = gl.glGetUniformLocation(rendering_program, "gradient");
+		gl.glProgramUniform1i(rendering_program, offset_loc, changeColor);
 	}
 	
 	// Function for the resizing of the object

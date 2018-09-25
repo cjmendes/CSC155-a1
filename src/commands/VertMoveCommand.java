@@ -17,7 +17,7 @@ public class VertMoveCommand extends AbstractAction{
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-			st.setVerticalCheck();
+		st.setVerticalCheck();
 	}
 	
 }
