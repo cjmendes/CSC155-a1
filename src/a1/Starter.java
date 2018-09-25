@@ -1,6 +1,8 @@
 package a1;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.nio.FloatBuffer;
@@ -39,26 +41,29 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	private float inc = 0.01f;
 	
 	private VertexReading vRead = new VertexReading(gl);
+	private boolean verticalCheck = false;
 	
 	public Starter() {
-		commands.CircleCommand circCommand = new commands.CircleCommand();
-		commands.VertMoveCommand vertMoveCommand = new commands.VertMoveCommand();
+		commands.CircleCommand circCommand = new commands.CircleCommand(this);
+		commands.VertMoveCommand vertMoveCommand = new commands.VertMoveCommand(this);
+		
+		JButton vertButton = new JButton ("Vertical");
+		vertButton.addActionListener(vertMoveCommand);
+		
+		JButton circButton = new JButton ("Circle");
+		//circButton.addActionListener(vertMoveCommand);
 		
 		JPanel topPanel = new JPanel();
 		this.add(topPanel,BorderLayout.NORTH);
-		JButton circButton = new JButton ("Circle");
-		//circButton.setAction(circCommand);
+		
 		topPanel.add(circButton);
-		
-		JButton vertButton = new JButton ("Verticle");
-		//vertButton.setAction(vertMoveCommand);
 		topPanel.add(vertButton);
-		
-		
+
+		// Listen for mouse events
 		this.addMouseWheelListener(this);
 		
 		
-		/*// get the content pane of the JFrame (this)
+		// get the content pane of the JFrame (this)
 		JComponent contentPane = (JComponent) this.getContentPane();
 		// get the "focus is in the window" input map for the content pane
 		int mapName = JComponent.WHEN_IN_FOCUSED_WINDOW;
@@ -73,7 +78,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		// put the "myCommand" command object into the content pane's action map
 		amap.put("color", vertMoveCommand);
 		//have the JFrame request keyboard focus
-		this.requestFocus();*/
+		this.requestFocus();
 		
 		
 		setTitle("Assignment #1");
@@ -87,6 +92,22 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		animator.start();
 	}
 	
+	public void setVerticalCheck() {
+		verticalCheck = !verticalCheck;
+	}
+	
+	public void vertical() {
+		
+		
+		//JButton circButton = new JButton ("Circle");
+		//circButton.setAction(circCommand);
+		//topPanel.add(circButton);
+		
+		
+		//vertButton.setAction(vertMoveCommand);
+		
+	}
+	
 	// Paints the object and the background 
 	@SuppressWarnings("static-access")
 	@Override
@@ -98,28 +119,31 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		FloatBuffer bkgBuffer = Buffers.newDirectFloatBuffer(bkg);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, bkgBuffer);
 		
-		//vertMove();
-		resize();
+		if(verticalCheck)
+			vertMove();
+		//resize();
 
 		gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3);
 	}
 	
 	// Function for the vertical movement of the object
 	private void vertMove() {
+		
+		
+		int offset_loc_ybr = gl.glGetUniformLocation(rendering_program, "ybr");
+		int offset_loc_ybl = gl.glGetUniformLocation(rendering_program, "ybl");
+		int offset_loc_yt = gl.glGetUniformLocation(rendering_program, "yt");
+		
+		
 		x += inc;
 		if(x > 0.5f)
 			inc = -0.01f;
 		if(x < -0.5f)
 			inc = 0.01f;
 		
-		int offset_loc = gl.glGetUniformLocation(rendering_program, "ybr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "yt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
+		gl.glProgramUniform1f(rendering_program, offset_loc_ybr, x);	
+		gl.glProgramUniform1f(rendering_program, offset_loc_ybl, x);
+		gl.glProgramUniform1f(rendering_program, offset_loc_yt, x);
 	}
 	
 	// Function for the resizing of the object
