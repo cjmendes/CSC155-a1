@@ -1,5 +1,6 @@
 package a1;
 
+import java.lang.Math;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,14 +39,20 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	private GLSLUtils util = new GLSLUtils();
 	
 	private float x = 0.0f;
+	private float y = 1.0f;
+	private float xr = 0.0f;
+	private float yr = 0.0f;
 	private float inc = 0.01f;
+	private int moveCircle = 0;
+	private float theta_total = 0.0f;
+	private float theta = 5.0f;
 	
 	private VertexReading vRead = new VertexReading(gl);
-	private boolean verticalCheck = false;
+	private int verticalCheck = 0;
 	private int changeColor = 0;
 	
 	public Starter() {
-		commands.CircleCommand circCommand = new commands.CircleCommand(this);
+		commands.CircleCommand circMoveCommand = new commands.CircleCommand(this);
 		commands.VertMoveCommand vertMoveCommand = new commands.VertMoveCommand(this);
 		commands.ColorCommand colorCommand = new commands.ColorCommand(this);
 		
@@ -53,17 +60,16 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		vertButton.addActionListener(vertMoveCommand);
 		
 		JButton circButton = new JButton ("Circle");
-		//circButton.addActionListener(vertMoveCommand);
+		circButton.addActionListener(circMoveCommand);
 		
 		JPanel topPanel = new JPanel();
 		this.add(topPanel,BorderLayout.NORTH);
 		
-		topPanel.add(circButton);
 		topPanel.add(vertButton);
+		topPanel.add(circButton);
 
 		// Listen for mouse events
 		this.addMouseWheelListener(this);
-		
 		
 		// get the content pane of the JFrame (this)
 		JComponent contentPane = (JComponent) this.getContentPane();
@@ -94,10 +100,19 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		animator.start();
 	}
 	
+	// Changes the flag for the vertical function
 	public void setVerticalCheck() {
-		verticalCheck = !verticalCheck;
+		verticalCheck = (verticalCheck == 1) ? 0 : 1;
+		moveCircle = 0;
 	}
 	
+	// Changes the flag for the circle function
+	public void setCircleCheck() {
+		moveCircle = (moveCircle == 1) ? 0 : 1;
+		verticalCheck = 0;
+	}
+	
+	//Changes the flag for the color function
 	public void switchColorPub() {
 		changeColor = (changeColor == 0) ? 1 : 0;
 	}
@@ -113,16 +128,34 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		FloatBuffer bkgBuffer = Buffers.newDirectFloatBuffer(bkg);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, bkgBuffer);
 		
-		if(verticalCheck)
+		if(verticalCheck == 1)
 			vertMove();
-		//resize();
+		if(moveCircle == 1)
+			circMove();
+		resize();
 		switchColor();
 
 		gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3);
 	}
 	
+	// Function for the circular movement of the object
+	private void circMove() {
+		
+		int offset_circ = gl.glGetUniformLocation(rendering_program, "moveCirc");
+		gl.glProgramUniform1i(rendering_program, offset_circ, moveCircle);
+		
+		theta_total += theta;
+		
+		int offset_theta = gl.glGetUniformLocation(rendering_program, "theta");
+		gl.glProgramUniform1f(rendering_program, offset_theta, theta_total);
+	}
+	
 	// Function for the vertical movement of the object
 	private void vertMove() {
+		
+		int offset_circ = gl.glGetUniformLocation(rendering_program, "moveCirc");
+		gl.glProgramUniform1i(rendering_program, offset_circ, moveCircle);
+		
 		int offset_loc_ybr = gl.glGetUniformLocation(rendering_program, "ybr");
 		int offset_loc_ybl = gl.glGetUniformLocation(rendering_program, "ybl");
 		int offset_loc_yt = gl.glGetUniformLocation(rendering_program, "yt");
@@ -138,6 +171,7 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 		gl.glProgramUniform1f(rendering_program, offset_loc_yt, x);
 	}
 	
+	//Function for the color change of the object
 	public void switchColor() {
 		int offset_loc = gl.glGetUniformLocation(rendering_program, "gradient");
 		gl.glProgramUniform1i(rendering_program, offset_loc, changeColor);
@@ -145,23 +179,8 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	
 	// Function for the resizing of the object
 	private void resize() {
-		int offset_loc = gl.glGetUniformLocation(rendering_program, "xbr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybr");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xbl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "ybl");
-		gl.glProgramUniform1f(rendering_program, offset_loc, -x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "xt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
-		
-		offset_loc = gl.glGetUniformLocation(rendering_program, "yt");
-		gl.glProgramUniform1f(rendering_program, offset_loc, x);
+		int offset_loc = gl.glGetUniformLocation(rendering_program, "scale");
+		gl.glProgramUniform1f(rendering_program, offset_loc, y);
 	}
 	
 	// Prints information about the machine, and then reads in the shader program
@@ -183,12 +202,10 @@ public class Starter extends JFrame implements GLEventListener, MouseWheelListen
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		
-		if(e.getWheelRotation() > 0  && x < 0.4999998f)
-			x += inc;
-		else if (e.getWheelRotation() < 0 && x > -0.4999998f)
-			x -= inc;
-		
-		resize();
+		if(e.getWheelRotation() > 0  && y < 1.9999998f)
+			y += inc;
+		else if (e.getWheelRotation() < 0 && y > 0.00999999f)
+			y -= inc;
 	}
 	
 	// Main function that starts the program
